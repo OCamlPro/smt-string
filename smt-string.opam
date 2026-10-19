@@ -10,6 +10,7 @@ license: "LGPL-2.1-only WITH OCaml-LGPL-linking-exception"
 depends: [
   "ocaml" {>= "5.2"}
   "dune" {>= "3.0"}
+  "zarith"
   "odoc" {with-doc}
 ]
 build: [

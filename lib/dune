@@ -1,3 +1,4 @@
 (library
  (name smt_string)
- (public_name smt-string))
+ (public_name smt-string)
+ (libraries zarith))

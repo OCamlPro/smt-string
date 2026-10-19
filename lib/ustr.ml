@@ -160,23 +160,24 @@ let to_code (s : t) : int =
 let from_code n : t =
   if Codepoint.is_valid_code n then [| Codepoint.of_int_exn n |] else empty
 
-let to_int (s : t) : int =
+let to_int (s : t) : Z.t =
   let len = Array.length s in
-  if len = 0 then -1 (* the empty string is not a numeral *)
+  if len = 0 then Z.minus_one (* the empty string is not a numeral *)
   else
     let rec loop acc i =
       if i = len then acc
       else
         let c = (s.(i) : Codepoint.t :> int) in
-        if c >= 0x30 && c <= 0x39 then loop ((acc * 10) + (c - 0x30)) (i + 1)
-        else -1 (* a non-digit makes the whole string invalid *)
+        if c >= 0x30 && c <= 0x39 then
+          loop (Z.add (Z.mul acc (Z.of_int 10)) (Z.of_int (c - 0x30))) (i + 1)
+        else Z.minus_one (* a non-digit makes the whole string invalid *)
     in
-    loop 0 0
+    loop Z.zero 0
 
-let from_int n : t =
-  if n < 0 then empty
+let from_int (n : Z.t) : t =
+  if Z.sign n < 0 then empty
   else
-    let str = string_of_int n in
+    let str = Z.to_string n in
     Array.init (String.length str) (fun i ->
         Codepoint.of_int_exn (Char.code str.[i]))
 

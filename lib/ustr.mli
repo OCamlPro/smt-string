@@ -127,11 +127,11 @@ val to_code : t -> int
 val from_code : int -> t
 (** [str.from_code n] singleton for a valid [n], else empty. *)
 
-val to_int : t -> int
+val to_int : t -> Z.t
 (** [str.to_int s] returns the integer value of a non-empty all-digit string
     [s], [-1] otherwise. *)
 
-val from_int : int -> t
+val from_int : Z.t -> t
 (** [str.from_int n] returns the string corresponding to the decimal
     representation of the integer [n >= 0], otherwise returns the empty string.
 *)
