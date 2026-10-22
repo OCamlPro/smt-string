@@ -10,6 +10,9 @@
 
 (maintainers "Hichem Rami Ait El Hara <hra@ocamlpro.com>")
 
+(source
+ (github ocamlpro/smt-string))
+
 (package
  (name smt-string)
  (synopsis "A library of Unicode string and regular expression values following the SMT-LIB standard")
