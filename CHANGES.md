@@ -1,6 +1,4 @@
-# Changes
-
-## 0.1.0
+# 0.1
 
 - Initial release.
 - `Codepoint`: Unicode code points in the range `0x0`-`0x2FFFF` (planes 0-2).
