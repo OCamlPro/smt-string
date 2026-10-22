@@ -95,20 +95,20 @@ val at : t -> int -> t
     the empty string if [i] is out of range. *)
 
 val substr : t -> int -> int -> t
-(** [str.substr s i n]: longest substring from [i] of length at most [n],
-    returns the empty string unless [0 <= i < length s] and [n > 0]. *)
+(** [str.substr s i n] longest substring from [i] of length at most [n], returns
+    the empty string unless [0 <= i < length s] and [n > 0]. *)
 
 val contains : t -> t -> bool
 (** [str.contains s sub] does [sub] occur in [s]? ([true] if [sub] is empty). *)
 
 val prefixof : t -> t -> bool
-(** [str.prefixof p s]: is [p] a prefix of [s]? *)
+(** [str.prefixof p s] is [p] a prefix of [s]? *)
 
 val suffixof : t -> t -> bool
-(** [str.suffixof q s]: is [q] a suffix of [s]? *)
+(** [str.suffixof q s] is [q] a suffix of [s]? *)
 
 val indexof : t -> t -> int -> int
-(** [str.indexof s sub i]: smallest position [>= i] of [sub] in [s], or [-1]
+(** [str.indexof s sub i] smallest position [>= i] of [sub] in [s], or [-1]
     (also when [i < 0] or [i > length s]). Empty [sub] matches at [i]. *)
 
 val replace : t -> t -> t -> t
@@ -117,11 +117,11 @@ val replace : t -> t -> t -> t
     [by ++ s]. *)
 
 val replace_all : t -> t -> t -> t
-(** [str.replace_all s sub by]: replace every non-overlapping occurrence, from
+(** [str.replace_all s sub by] replace every non-overlapping occurrence, from
     left to right, of [sub] with [by] in [s], returns [s] if [sub] is empty. *)
 
 val to_code : t -> int
-(** [str.to_code s]: returns the code point of a singleton string [s], [-1]
+(** [str.to_code s] returns the code point of a singleton string [s], [-1]
     otherwise. *)
 
 val from_code : int -> t
