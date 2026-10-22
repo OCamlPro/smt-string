@@ -10,7 +10,7 @@ string and regex terms, e.g. when checking a model.
 
 ## Modules
 
-- `Codepoint`: a single Unicode code point in the range `0x0`-`0x2FFFF`.
-- `Ustr`: SMT-LIB strings (`str.*` operations).
-- `Reglan`: regular expressions (`re.*` operations), with membership decided by
-  Brzozowski derivatives.
+- `Codepoint`: Unicode code points in the range `0x0`-`0x2FFFF` (planes 0-2).
+- `Ustr`: SMT-LIB Unicode strings and the `str.*` operations.
+- `Reglan`: SMT-LIB regular expressions (`re.*` operations), with membership
+  decided by Brzozowski derivatives.
