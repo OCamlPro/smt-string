@@ -26,6 +26,6 @@ let of_int_exn n =
   if is_valid_code n then n
   else
     invalid_arg
-      (Printf.sprintf "Smt_string.Codepoint.of_int_exn: %#x out of range" n)
+      (Printf.sprintf "Smt_string.Codepoint.of_int_exn: %d out of range" n)
 
 let to_int c = c

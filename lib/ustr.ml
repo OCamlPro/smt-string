@@ -92,8 +92,8 @@ let compare (a : t) (b : t) : int =
   in
   aux 0
 
-let equal (a : t) (b : t) = compare a b = 0
+let equal (a : t) (b : t) =
+  a == b || (Array.length a = Array.length b && compare a b = 0)
 
 let hash (s : t) : int =
-  (* TODO: use a better hash function *)
-  Hashtbl.hash s
+  Array.fold_left (fun h c -> (h * 31) + Codepoint.to_int c) 0 s land max_int
