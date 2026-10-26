@@ -90,7 +90,7 @@ let substr (s : t) i n : t =
   if i < 0 || i >= len || n <= 0 then empty
   else
     let rem = len - i in
-    Array.sub s i (Int.min n rem)
+    Array.sub s i (if n < rem then n else rem)
 
 (* Does [sub] occur in [s] at index [j]? Assumes the span fits. *)
 let matches_at (s : t) (sub : t) j =

@@ -4,13 +4,13 @@ synopsis:
   "A library of Unicode string and regular expression values following the SMT-LIB standard"
 description:
   "A library of Unicode string and regular expression values following the SMT-LIB standard, where characters are Unicode code points in the range 0x0-0x2FFFF (planes 0-2)."
-maintainer: ["Hichem Rami Ait El Hara <hra@ocamlpro.com>"]
-authors: ["Hichem Rami Ait El Hara <hra@ocamlpro.com>"]
+maintainer: ["Hichem Rami Ait-El-Hara <hra@ocamlpro.com>"]
+authors: ["Hichem Rami Ait-El-Hara <hra@ocamlpro.com>"]
 license: "LGPL-2.1-only WITH OCaml-LGPL-linking-exception"
 homepage: "https://github.com/ocamlpro/smt-string"
 bug-reports: "https://github.com/ocamlpro/smt-string/issues"
 depends: [
-  "ocaml" {>= "5.2"}
+  "ocaml" {>= "4.08.1"}
   "dune" {>= "3.0"}
   "zarith"
   "odoc" {with-doc}

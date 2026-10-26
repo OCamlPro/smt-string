@@ -6,9 +6,9 @@
 
 (license "LGPL-2.1-only WITH OCaml-LGPL-linking-exception")
 
-(authors "Hichem Rami Ait El Hara <hra@ocamlpro.com>")
+(authors "Hichem Rami Ait-El-Hara <hra@ocamlpro.com>")
 
-(maintainers "Hichem Rami Ait El Hara <hra@ocamlpro.com>")
+(maintainers "Hichem Rami Ait-El-Hara <hra@ocamlpro.com>")
 
 (source
  (github ocamlpro/smt-string))
@@ -22,6 +22,6 @@
    0x0-0x2FFFF (planes 0-2).")
  (depends
   (ocaml
-   (>= 5.2))
+   (>= 4.08.1))
   dune
   zarith))
