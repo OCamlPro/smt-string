@@ -1,16 +1,14 @@
 # smt-string
 
-An OCaml library of Unicode strings and regular expressions following
-[SMT-LIB](https://smt-lib.org/theories-UnicodeStrings.shtml) Unicode strings
-theory.
-Characters are Unicode code points in the range `0x0`-`0x2FFFF` (planes 0-2).
+An OCaml library of Unicode strings and regular expressions over the alphabet
+of the [SMT-LIB](https://smt-lib.org/theories-UnicodeStrings.shtml) Unicode
+strings theory, Unicode code points in the range `0x0`-`0x2FFFF` (planes 0-2).
 
-It provides implementations of the theory's operations for evaluating concrete
-string and regex terms, e.g. when checking a model.
+It provides the primitives needed to build concrete string and regex values.
 
 ## Modules
 
 - `Codepoint`: Unicode code points in the range `0x0`-`0x2FFFF` (planes 0-2).
-- `Ustr`: SMT-LIB Unicode strings and the `str.*` operations.
-- `Reglan`: SMT-LIB regular expressions (`re.*` operations), with membership
-  decided by Brzozowski derivatives.
+- `Ustr`: immutable strings of code points, with substring search.
+- `Reglan`: regular languages, with membership decided by Brzozowski
+  derivatives and leftmost shortest match search.
