@@ -80,8 +80,8 @@ val find : ?nonempty:bool -> t -> Ustr.t -> int -> int * int
     [i] as [(start, length)]. Empty matches are skipped if [nonempty] is [true]
     (default [false]).
 
-    @raise [Not_found] if there is no such match.
-    @raise [Invalid_argument] if [i] is not in [[0, length s]]. *)
+    @raise Not_found if there is no such match.
+    @raise Invalid_argument if [i] is not in [[0, length s]]. *)
 
 val find_opt : ?nonempty:bool -> t -> Ustr.t -> int -> (int * int) option
 (** [find_opt r s i] same as {!find} but returns [None] instead of raising. *)

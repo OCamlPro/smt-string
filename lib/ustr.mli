@@ -56,7 +56,7 @@ val length : t -> int
 val get : t -> int -> Codepoint.t
 (** [get s i] returns the [i]-th code point of [s].
 
-    @raise [Invalid_argument] if [i] is out of bounds. *)
+    @raise Invalid_argument if [i] is out of bounds. *)
 
 val get_opt : t -> int -> Codepoint.t option
 (** [get_opt s i] returns the [i]-th code point of [s], or [None] if [i] is out
@@ -69,14 +69,14 @@ val fold_left : ('a -> Codepoint.t -> 'a) -> 'a -> t -> 'a
 val sub : t -> int -> int -> t
 (** [sub s i n] returns the [n] code points of [s] starting at [i].
 
-    @raise [Invalid_argument] if they do not all lie within [s]. *)
+    @raise Invalid_argument if they do not all lie within [s]. *)
 
 val find : t -> t -> int -> int
 (** [find s sub i] returns the smallest index [>= i] at which [sub] occurs in
     [s]. An empty [sub] occurs at [i].
 
-    @raise [Not_found] if [sub] does not occur in [s] at or after [i].
-    @raise [Invalid_argument] if [i] is not in [[0, length s]]. *)
+    @raise Not_found if [sub] does not occur in [s] at or after [i].
+    @raise Invalid_argument if [i] is not in [[0, length s]]. *)
 
 val find_opt : t -> t -> int -> int option
 (** [find_opt s sub i] same as {!find} but returns [None] instead of raising. *)
