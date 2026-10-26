@@ -23,7 +23,7 @@ type t =
   | Empty (* re.none *)
   | Eps (* {""} *)
   | Chars of Codepoint.t * Codepoint.t (* inclusive code-point range *)
-  | Lit of Ustr.t (* a concrete non-empty string *)
+  | Lit of Ustr.t  (** A single string of at least two code points. *)
   | Concat of t * t
   | Union of t * t
   | Inter of t * t
@@ -72,7 +72,14 @@ let any_char =
       Codepoint.of_int_exn Codepoint.max_code_point )
 
 let range lo hi = if Codepoint.compare lo hi > 0 then Empty else Chars (lo, hi)
-let of_ustr s = if Ustr.is_empty s then Eps else Lit s
+
+let of_ustr s =
+  match Ustr.length s with
+  | 0 -> Eps
+  | 1 ->
+      let c = Ustr.get s 0 in
+      Chars (c, c)
+  | _ -> Lit s
 
 let concat a b =
   match (a, b) with
@@ -80,13 +87,42 @@ let concat a b =
   | Eps, x | x, Eps -> x
   | _ -> Concat (a, b)
 
+(* Unions and intersections are kept flattened, sorted and without duplicates,
+   so that the derivatives of a term stay finitely many. *)
+
+let rec union_args acc = function
+  | Union (a, b) -> union_args (union_args acc b) a
+  | r -> r :: acc
+
+let rec inter_args acc = function
+  | Inter (a, b) -> inter_args (inter_args acc b) a
+  | r -> r :: acc
+
+let is_nonempty = function Empty -> false | _ -> true
+
+(* Right-nested [mk] of the operands, sorted and without duplicates. *)
+let rebuild mk l =
+  let rec aux = function [] -> Empty | [ r ] -> r | r :: l -> mk r (aux l) in
+  aux (List.sort_uniq compare l)
+
 let union a b =
-  if equal a b then a
-  else match (a, b) with Empty, x | x, Empty -> x | _ -> Union (a, b)
+  if a == b then a
+  else
+    match (a, b) with
+    | Empty, x | x, Empty -> x
+    | _ ->
+        let l = union_args (union_args [] b) a in
+        rebuild (fun x y -> Union (x, y)) (List.filter is_nonempty l)
 
 let inter a b =
-  if equal a b then a
-  else match (a, b) with Empty, _ | _, Empty -> Empty | _ -> Inter (a, b)
+  if a == b then a
+  else
+    match (a, b) with
+    | Empty, _ | _, Empty -> Empty
+    | _ ->
+        let l = inter_args (inter_args [] b) a in
+        if List.exists (fun r -> not (is_nonempty r)) l then Empty
+        else rebuild (fun x y -> Inter (x, y)) l
 
 let star = function Empty | Eps -> Eps | Star _ as r -> r | r -> Star r
 let comp = function Comp r -> r | r -> Comp r
@@ -111,14 +147,14 @@ let rec deriv r c =
   | Lit s ->
       if Codepoint.equal (Ustr.get s 0) c then
         let len = Ustr.length s in
-        if len = 1 then Eps else Lit (Ustr.sub s 1 (len - 1))
+        of_ustr (Ustr.sub s 1 (len - 1))
       else Empty
   | Concat (a, b) ->
       let d = concat (deriv a c) b in
       if nullable a then union d (deriv b c) else d
   | Union (a, b) -> union (deriv a c) (deriv b c)
   | Inter (a, b) -> inter (deriv a c) (deriv b c)
-  | Star a -> concat (deriv a c) (star a)
+  | Star a as s -> concat (deriv a c) s
   | Comp a -> comp (deriv a c)
 
 let matches r s = nullable (Ustr.fold_left deriv r s)

@@ -22,7 +22,7 @@ type t = private
   | Eps  (** The language of the empty string only. *)
   | Chars of Codepoint.t * Codepoint.t
       (** Code points in an inclusive range, with [lo <= hi]. *)
-  | Lit of Ustr.t  (** A single non-empty string. *)
+  | Lit of Ustr.t  (** A single string of at least two code points. *)
   | Concat of t * t
   | Union of t * t
   | Inter of t * t
@@ -53,8 +53,14 @@ val of_ustr : Ustr.t -> t
 (** [of_ustr s] the language of [s] only. *)
 
 val concat : t -> t -> t
+
 val union : t -> t -> t
+(** Nested unions are flattened, nested to the right, sorted by {!compare} and
+    without duplicates, and never contain [Empty]. *)
+
 val inter : t -> t -> t
+(** Nested intersections are flattened, nested to the right, sorted by
+    {!compare} and without duplicates, and never contain [Empty]. *)
 
 val star : t -> t
 (** Kleene star. *)
