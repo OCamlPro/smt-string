@@ -29,4 +29,3 @@ let of_int_exn n =
       (Printf.sprintf "Smt_string.Codepoint.of_int_exn: %#x out of range" n)
 
 let to_int c = c
-let is_digit c = c >= 0x30 && c <= 0x39

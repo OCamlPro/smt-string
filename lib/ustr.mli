@@ -10,16 +10,14 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(** SMT-LIB Unicode strings: a finite sequence of {!Smt_string.Codepoint.t}
-    (code points in [[0, 0x2FFFF]], Planes 0-2).
+(** Unicode strings: immutable sequences of {!Smt_string.Codepoint.t} (code
+    points in [[0, 0x2FFFF]], Planes 0-2).
 
-    Semantics are over the code-point sequence, no normalization, collation or
-    grapheme clustering.
-
-    @see <https://smt-lib.org/theories-UnicodeStrings.shtml> SMT-LIB theory *)
+    Operations work on the code-point sequence, with no normalization, collation
+    or grapheme clustering. *)
 
 type t
-(** An immutable SMT-LIB string. *)
+(** An immutable string. *)
 
 (** {1 Construction and conversion} *)
 
@@ -50,91 +48,46 @@ val to_codepoint_array : t -> Codepoint.t array
 (** [to_codepoint_array s] returns the characters of [s] as an array of code
     points. *)
 
-val get : t -> int -> Codepoint.t option
-(** [get s i] returns the [i]-th character of [s], or [None] if [i] is out of
-    bounds. *)
-
-val hash : t -> int
-
-(** {1 SMT-LIB literal output} *)
-
-val to_smtlib_literal : t -> string
-(** The SMT-LIB quoted form of [s]: printable ASCII is kept as is (a double
-    quote inside [s] is written twice), and every other character is written as
-    a [\u] hex escape. *)
-
-val pp : Format.formatter -> t -> unit
-(** Prints using {!to_smtlib_literal}. *)
-
-(** {1 SMT-LIB operations}
-
-    Argument order mirrors the theory's symbols and partial functions use its
-    totalizing conventions (out-of-range yields the empty string or [-1]). *)
+(** {1 Access} *)
 
 val length : t -> int
-(** [str.len] number of code points. *)
+(** Number of code points. *)
+
+val get : t -> int -> Codepoint.t
+(** [get s i] returns the [i]-th code point of [s].
+
+    @raise [Invalid_argument] if [i] is out of bounds. *)
+
+val get_opt : t -> int -> Codepoint.t option
+(** [get_opt s i] returns the [i]-th code point of [s], or [None] if [i] is out
+    of bounds. *)
+
+val fold_left : ('a -> Codepoint.t -> 'a) -> 'a -> t -> 'a
+(** [fold_left f init s] folds [f] over the code points of [s], from left to
+    right, without copying [s]. *)
+
+val sub : t -> int -> int -> t
+(** [sub s i n] returns the [n] code points of [s] starting at [i].
+
+    @raise [Invalid_argument] if they do not all lie within [s]. *)
+
+val find : t -> t -> int -> int
+(** [find s sub i] returns the smallest index [>= i] at which [sub] occurs in
+    [s]. An empty [sub] occurs at [i].
+
+    @raise [Not_found] if [sub] does not occur in [s] at or after [i].
+    @raise [Invalid_argument] if [i] is not in [[0, length s]]. *)
+
+val find_opt : t -> t -> int -> int option
+(** [find_opt s sub i] same as {!find} but returns [None] instead of raising. *)
+
+(** {1 Combination and comparison} *)
 
 val concat : t -> t -> t
-(** [str.++]. *)
-
 val concat_list : t list -> t
 
 val compare : t -> t -> int
-(** Numeric code-point lexicographic order. *)
+(** Lexicographic order on code points. *)
 
 val equal : t -> t -> bool
-
-val lt : t -> t -> bool
-(** [str.<]. *)
-
-val leq : t -> t -> bool
-(** [str.<=]. *)
-
-val at : t -> int -> t
-(** [str.at s i] returns the singleton string containing the element at [i], or
-    the empty string if [i] is out of range. *)
-
-val substr : t -> int -> int -> t
-(** [str.substr s i n] longest substring from [i] of length at most [n], returns
-    the empty string unless [0 <= i < length s] and [n > 0]. *)
-
-val contains : t -> t -> bool
-(** [str.contains s sub] does [sub] occur in [s]? ([true] if [sub] is empty). *)
-
-val prefixof : t -> t -> bool
-(** [str.prefixof p s] is [p] a prefix of [s]? *)
-
-val suffixof : t -> t -> bool
-(** [str.suffixof q s] is [q] a suffix of [s]? *)
-
-val indexof : t -> t -> int -> int
-(** [str.indexof s sub i] smallest position [>= i] of [sub] in [s], or [-1]
-    (also when [i < 0] or [i > length s]). Empty [sub] matches at [i]. *)
-
-val replace : t -> t -> t -> t
-(** [str.replace s sub by] replace the first occurrence of [sub] with [by] in
-    [s], returns [s] if [sub] is not found, and if [sub] is empty returns
-    [by ++ s]. *)
-
-val replace_all : t -> t -> t -> t
-(** [str.replace_all s sub by] replace every non-overlapping occurrence, from
-    left to right, of [sub] with [by] in [s], returns [s] if [sub] is empty. *)
-
-val to_code : t -> int
-(** [str.to_code s] returns the code point of a singleton string [s], [-1]
-    otherwise. *)
-
-val from_code : int -> t
-(** [str.from_code n] singleton for a valid [n], else empty. *)
-
-val to_int : t -> Z.t
-(** [str.to_int s] returns the integer value of a non-empty all-digit string
-    [s], [-1] otherwise. *)
-
-val from_int : Z.t -> t
-(** [str.from_int n] returns the string corresponding to the decimal
-    representation of the integer [n >= 0], otherwise returns the empty string.
-*)
-
-val is_digit : t -> bool
-(** [str.is_digit s] is [s] a single ASCII digit? *)
+val hash : t -> int

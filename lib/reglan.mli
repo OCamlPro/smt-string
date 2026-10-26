@@ -10,13 +10,24 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(** SMT-LIB regular languages (sort [RegLan]): sets of {!Smt_string.Ustr.t}.
-    Membership is decided by Brzozowski derivatives.
+(** Regular languages: sets of {!Smt_string.Ustr.t}, with membership decided by
+    Brzozowski derivatives.
 
-    @see <https://smt-lib.org/theories-UnicodeStrings.shtml> SMT-LIB theory *)
+    The constructors are exposed so that terms can be inspected (e.g. to print
+    them), but values are only built with the functions below, which keep terms
+    simplified. *)
 
-type t
-(** A regular language. *)
+type t = private
+  | Empty  (** The empty language. *)
+  | Eps  (** The language of the empty string only. *)
+  | Chars of Codepoint.t * Codepoint.t
+      (** Code points in an inclusive range, with [lo <= hi]. *)
+  | Lit of Ustr.t  (** A single non-empty string. *)
+  | Concat of t * t
+  | Union of t * t
+  | Inter of t * t
+  | Star of t
+  | Comp of t  (** Complement, with respect to all strings. *)
 
 val equal : t -> t -> bool
 (** Syntactic equality. *)
@@ -24,100 +35,53 @@ val equal : t -> t -> bool
 val compare : t -> t -> int
 (** Syntactic total order. *)
 
-(** {1 Atoms} *)
+(** {1 Construction} *)
 
-val none : t
-(** [re.none] empty language. *)
-
-val all : t
-(** [re.all] all strings. *)
-
-val allchar : t
-(** [re.allchar] any single character. *)
+val empty : t
+(** The empty language. *)
 
 val epsilon : t
-(** [{""}], i.e. [(str.to_re "")]. *)
+(** The language of the empty string only. *)
 
-val to_re : Ustr.t -> t
-(** [str.to_re s] the singleton [{s}]. *)
+val any_char : t
+(** Any single code point. *)
 
 val range : Codepoint.t -> Codepoint.t -> t
-(** [re.range lo hi] single chars in [[lo, hi]], empty if [lo > hi]. *)
+(** [range lo hi] single code points in [[lo, hi]], empty if [lo > hi]. *)
 
-(** {1 Combinators} *)
+val of_ustr : Ustr.t -> t
+(** [of_ustr s] the language of [s] only. *)
 
 val concat : t -> t -> t
-(** [re.++]. *)
-
-val concat_list : t list -> t
-
 val union : t -> t -> t
-(** [re.union]. *)
-
-val union_list : t list -> t
-
 val inter : t -> t -> t
-(** [re.inter]. *)
-
-val inter_list : t list -> t
-
-val diff : t -> t -> t
-(** [re.diff] strings in [r1] but not [r2]. *)
-
-val comp : t -> t
-(** [re.comp] complement. *)
 
 val star : t -> t
-(** [re.*] Kleene star. *)
+(** Kleene star. *)
 
-val plus : t -> t
-(** [re.+], i.e. [r ++ r*]. *)
-
-val opt : t -> t
-(** [re.opt], i.e. [r | ""]. *)
-
-val power : int -> t -> t
-(** [(_ re.^ n) r] [n] repetitions ([{""}] if [n <= 0]). *)
-
-val loop : int -> int -> t -> t
-(** [(_ re.loop n1 n2) r] [n1] to [n2] repetitions, empty if [n1 > n2]. *)
+val comp : t -> t
+(** Complement. *)
 
 (** {1 Membership} *)
 
 val nullable : t -> bool
-(** Does the language contain [""]? *)
+(** Does the language contain the empty string? *)
 
-val in_re : Ustr.t -> t -> bool
-(** [str.in_re s R] is [s] in [R]? *)
+val deriv : t -> Codepoint.t -> t
+(** [deriv r c] the strings [s] such that [c] followed by [s] is in [r]. *)
 
 val matches : t -> Ustr.t -> bool
-(** {!in_re} with arguments flipped. *)
+(** [matches r s] is [s] in [r]? *)
 
 (** {1 Match search} *)
 
-val indexof_re : Ustr.t -> t -> int -> int
-(** Start index of the first match of [r] in [s] at or after [i], otherwise [-1]
-    (also if [i] is outside [[0, length s]]).
+val find : ?nonempty:bool -> t -> Ustr.t -> int -> int * int
+(** [find r s i] returns the first (shortest) match of [r] in [s] at or after
+    [i] as [(start, length)]. Empty matches are skipped if [nonempty] is [true]
+    (default [false]).
 
-    Not in the SMT-LIB theory, but cvc5 has it. *)
+    @raise [Not_found] if there is no such match.
+    @raise [Invalid_argument] if [i] is not in [[0, length s]]. *)
 
-val find : Ustr.t -> t -> int -> (int * int) option
-(** First, shortest match at or after [i] as [Some (start, length)], or [None].
-*)
-
-(** {1 Replacement} *)
-
-val replace_re : Ustr.t -> t -> Ustr.t -> Ustr.t
-(** Replace the first, shortest match of [r] in [s] with [by], prepends [by] if
-    [r] accepts [""], and [s] is returned unchanged if nothing matches. *)
-
-val replace_re_all : Ustr.t -> t -> Ustr.t -> Ustr.t
-(** Replace every non-overlapping, shortest, non-empty match, left to right
-    (empty matches skipped). *)
-
-(** {1 Printing} *)
-
-val pp : Format.formatter -> t -> unit
-(** Prints in SMT-LIB syntax. *)
-
-val to_string : t -> string
+val find_opt : ?nonempty:bool -> t -> Ustr.t -> int -> (int * int) option
+(** [find_opt r s i] same as {!find} but returns [None] instead of raising. *)

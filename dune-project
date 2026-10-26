@@ -23,5 +23,4 @@
  (depends
   (ocaml
    (>= 4.08.1))
-  dune
-  zarith))
+  dune))

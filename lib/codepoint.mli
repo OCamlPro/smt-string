@@ -41,6 +41,3 @@ val of_int_exn : int -> t
     raises [Invalid_argument] otherwise. *)
 
 val to_int : t -> int
-
-val is_digit : t -> bool
-(** [is_digit c] is [c] an ASCII digit [0x30]-[0x39]? *)

@@ -30,39 +30,53 @@ let to_code_points (s : t) : int array = Array.map Codepoint.to_int s
 let of_codepoint_array (a : Codepoint.t array) : t = Array.copy a
 let to_codepoint_array (s : t) : Codepoint.t array = Array.copy s
 
-let get (s : t) i : Codepoint.t option =
-  if i >= 0 && i < Array.length s then Some s.(i) else None
-
-let hash (s : t) : int =
-  (* TODO: use a better hash function *)
-  Hashtbl.hash s
-
 (* ------------------------------------------------------------------ *)
-(* SMT-LIB literal output                                              *)
-(* ------------------------------------------------------------------ *)
-
-let to_smtlib_literal (s : t) : string =
-  let buf = Buffer.create (Array.length s + 2) in
-  Buffer.add_char buf '"';
-  Array.iter
-    (fun c ->
-      let cp = (c : Codepoint.t :> int) in
-      if cp = 0x22 then Buffer.add_string buf "\"\"" (* doubled quote *)
-      else if cp = 0x5C then Buffer.add_string buf "\\u{5c}"
-        (* SMT-LIB always reads \u{...} as an escape *)
-      else if cp >= 0x20 && cp <= 0x7E then Buffer.add_char buf (Char.chr cp)
-      else Buffer.add_string buf (Printf.sprintf "\\u{%x}" cp))
-    s;
-  Buffer.add_char buf '"';
-  Buffer.contents buf
-
-let pp fmt s = Format.pp_print_string fmt (to_smtlib_literal s)
-
-(* ------------------------------------------------------------------ *)
-(* SMT-LIB operations                                                  *)
+(* Access                                                             *)
 (* ------------------------------------------------------------------ *)
 
 let length (s : t) = Array.length s
+
+let get (s : t) i : Codepoint.t =
+  if i >= 0 && i < Array.length s then s.(i)
+  else invalid_arg "Smt_string.Ustr.get"
+
+let get_opt (s : t) i : Codepoint.t option =
+  if i >= 0 && i < Array.length s then Some s.(i) else None
+
+let fold_left f init (s : t) = Array.fold_left f init s
+
+let sub (s : t) i n : t =
+  if i >= 0 && n >= 0 && i + n <= Array.length s then Array.sub s i n
+  else invalid_arg "Smt_string.Ustr.sub"
+
+(* Does [sub] occur in [s] at index [j]? Assumes the span fits. *)
+let matches_at (s : t) (sub : t) j =
+  let sub_len = Array.length sub in
+  let rec aux k =
+    k = sub_len || (Codepoint.equal s.(j + k) sub.(k) && aux (k + 1))
+  in
+  aux 0
+
+let find_from (s : t) (sub : t) i =
+  let last = Array.length s - Array.length sub in
+  let rec loop j =
+    if j > last then None
+    else if matches_at s sub j then Some j
+    else loop (j + 1)
+  in
+  loop i
+
+let find_opt (s : t) (sub : t) i =
+  if i < 0 || i > Array.length s then None else find_from s sub i
+
+let find (s : t) (sub : t) i =
+  if i < 0 || i > Array.length s then invalid_arg "Smt_string.Ustr.find";
+  match find_from s sub i with Some j -> j | None -> raise Not_found
+
+(* ------------------------------------------------------------------ *)
+(* Combination and comparison                                         *)
+(* ------------------------------------------------------------------ *)
+
 let concat (a : t) (b : t) : t = Array.append a b
 let concat_list (l : t list) : t = Array.concat l
 
@@ -79,106 +93,7 @@ let compare (a : t) (b : t) : int =
   aux 0
 
 let equal (a : t) (b : t) = compare a b = 0
-let lt a b = compare a b < 0
-let leq a b = compare a b <= 0
 
-let at (s : t) i : t =
-  if i >= 0 && i < Array.length s then [| s.(i) |] else empty
-
-let substr (s : t) i n : t =
-  let len = Array.length s in
-  if i < 0 || i >= len || n <= 0 then empty
-  else
-    let rem = len - i in
-    Array.sub s i (if n < rem then n else rem)
-
-(* Does [sub] occur in [s] at index [j]? Assumes the span fits. *)
-let matches_at (s : t) (sub : t) j =
-  let sub_len = Array.length sub in
-  let rec aux k =
-    k = sub_len || (Codepoint.equal s.(j + k) sub.(k) && aux (k + 1))
-  in
-  aux 0
-
-(* Least index [>= start] where non-empty [sub] occurs in [s], or [-1]. [start]
-   should be [>= 0]. *)
-let find_from (s : t) (sub : t) start =
-  assert (start >= 0);
-  let last = Array.length s - Array.length sub in
-  let rec loop j =
-    if j > last then -1 else if matches_at s sub j then j else loop (j + 1)
-  in
-  loop start
-
-let contains (s : t) (sub : t) : bool =
-  Array.length sub = 0 || find_from s sub 0 >= 0
-
-let prefixof (p : t) (s : t) : bool =
-  Array.length p <= Array.length s && matches_at s p 0
-
-let suffixof (q : t) (s : t) : bool =
-  let q_len = Array.length q in
-  let s_len = Array.length s in
-  q_len <= s_len && matches_at s q (s_len - q_len)
-
-let indexof (s : t) (sub : t) i : int =
-  let n = Array.length s in
-  if i < 0 || i > n then -1
-  else if Array.length sub = 0 then i (* empty matches at i *)
-  else find_from s sub i
-
-let replace (s : t) (sub : t) (by_ : t) : t =
-  if Array.length sub = 0 then concat by_ s
-  else
-    match find_from s sub 0 with
-    | -1 -> s
-    | j ->
-        let sub_len = Array.length sub in
-        let start = Array.sub s 0 j in
-        let sub_end_pos = j + sub_len in
-        let end_ = Array.sub s sub_end_pos (Array.length s - sub_end_pos) in
-        concat_list [ start; by_; end_ ]
-
-let replace_all (s : t) (sub : t) (by_ : t) : t =
-  let sub_len = Array.length sub in
-  if sub_len = 0 then s
-  else
-    let n = Array.length s in
-    (* Collect, in reverse, the slices between matches and the replacement for
-       each match, then join them. Advancing past each match keeps occurrences
-       non-overlapping. *)
-    let rec loop i acc =
-      match find_from s sub i with
-      | -1 -> List.rev (Array.sub s i (n - i) :: acc)
-      | j -> loop (j + sub_len) (by_ :: Array.sub s i (j - i) :: acc)
-    in
-    concat_list (loop 0 [])
-
-let to_code (s : t) : int =
-  if Array.length s = 1 then (s.(0) : Codepoint.t :> int) else -1
-
-let from_code n : t =
-  if Codepoint.is_valid_code n then [| Codepoint.of_int_exn n |] else empty
-
-let to_int (s : t) : Z.t =
-  let len = Array.length s in
-  if len = 0 then Z.minus_one (* the empty string is not a numeral *)
-  else
-    let rec loop acc i =
-      if i = len then acc
-      else
-        let c = (s.(i) : Codepoint.t :> int) in
-        if c >= 0x30 && c <= 0x39 then
-          loop (Z.add (Z.mul acc (Z.of_int 10)) (Z.of_int (c - 0x30))) (i + 1)
-        else Z.minus_one (* a non-digit makes the whole string invalid *)
-    in
-    loop Z.zero 0
-
-let from_int (n : Z.t) : t =
-  if Z.sign n < 0 then empty
-  else
-    let str = Z.to_string n in
-    Array.init (String.length str) (fun i ->
-        Codepoint.of_int_exn (Char.code str.[i]))
-
-let is_digit (s : t) = Array.length s = 1 && Codepoint.is_digit s.(0)
+let hash (s : t) : int =
+  (* TODO: use a better hash function *)
+  Hashtbl.hash s
